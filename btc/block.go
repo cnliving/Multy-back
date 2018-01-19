@@ -457,18 +457,25 @@ func blockConfirmations(hash *chainhash.Hash) {
 }
 
 func parseTransaction(blockHeight int64, txVerbose *btcjson.TxRawResult) {
+	log.Debugf("parseTransaction ---------")
 	fullWallets := []rawWallet{}
 	txTimeUnix := time.Now().Unix()
 	user := store.User{}
 	if isClientMentioned(txVerbose) {
 		rawWallets := getUsersByMentionedAddresses(txVerbose)
+
+		log.Debugf("rawWallets ---------%v", rawWallets)
+
 		for _, rawWallet := range rawWallets {
 			fullWallets = append(fullWallets, setTransactionTypeForWallet(rawWallet, blockHeight, txVerbose))
 		}
 
+		log.Debugf("fullWallets ---------%v", fullWallets)
+
 		for _, fullWallet := range fullWallets {
 
 			if fullWallet.TxStatus == store.TxStatusAppearedInMempoolIncoming || fullWallet.TxStatus == store.TxStatusAppearedInBlockIncoming {
+				log.Debugf("incoming")
 				for _, output := range txVerbose.Vout {
 					for _, address := range output.ScriptPubKey.Addresses {
 
@@ -569,6 +576,7 @@ func parseTransaction(blockHeight int64, txVerbose *btcjson.TxRawResult) {
 				}
 			}
 			if fullWallet.TxStatus == store.TxStatusAppearedInMempoolOutcoming || fullWallet.TxStatus == store.TxStatusAppearedInBlockOutcoming {
+				log.Debugf("outcoming")
 				for _, output := range txVerbose.Vout {
 					for _, address := range output.ScriptPubKey.Addresses {
 
@@ -681,21 +689,19 @@ func parseTransaction(blockHeight int64, txVerbose *btcjson.TxRawResult) {
 }
 
 func isClientMentioned(txVerbose *btcjson.TxRawResult) bool {
-	var flag bool
 
 	for _, output := range txVerbose.Vout {
 		for _, address := range output.ScriptPubKey.Addresses {
 			query := bson.M{"wallets.addresses.address": address}
 			err := usersData.Find(query).One(nil)
-			if err != mgo.ErrNotFound {
+			if err != nil {
 				continue
 			}
-			if err != nil && err != mgo.ErrNotFound {
-				log.Errorf("parseInput:txsData.Find: %s", err.Error())
-				continue
-			}
-			flag = true
-			return flag
+			// if err != nil && err == mgo.ErrNotFound {
+			// 	log.Errorf("parseInput:txsData.Find: %s", err.Error())
+			// 	continue
+			// }
+			return true
 		}
 	}
 
@@ -708,15 +714,15 @@ func isClientMentioned(txVerbose *btcjson.TxRawResult) bool {
 		for _, address := range previousTxVerbose.Vout[input.Vout].ScriptPubKey.Addresses {
 			query := bson.M{"wallets.addresses.address": address}
 			err := usersData.Find(query).One(nil)
-			if err != mgo.ErrNotFound {
+			if err != nil {
 				continue
 			}
-			if err != nil && err != mgo.ErrNotFound {
-				log.Errorf("parseInput:txsData.Find: %s", err.Error())
-				continue
-			}
-			flag = true
-			return flag
+			// if err != nil && err != mgo.ErrNotFound {
+			// 	log.Errorf("parseInput:txsData.Find: %s", err.Error())
+			// 	continue
+			// }
+
+			return true
 		}
 	}
 	return false
@@ -729,13 +735,13 @@ func getUsersByMentionedAddresses(txVerbose *btcjson.TxRawResult) []rawWallet {
 		for _, address := range output.ScriptPubKey.Addresses {
 			query := bson.M{"wallets.addresses.address": address}
 			err := usersData.Find(query).One(&user)
-			if err != mgo.ErrNotFound {
+			if err == mgo.ErrNotFound {
 				continue
 			}
-			if err != nil && err != mgo.ErrNotFound {
-				log.Errorf("parseInput:txsData.Find: %s", err.Error())
-				continue
-			}
+			// if err != nil && err != mgo.ErrNotFound {
+			// 	log.Errorf("parseInput:txsData.Find: %s", err.Error())
+			// 	continue
+			// }
 
 			for _, userWallet := range user.Wallets {
 				for _, walletAddress := range userWallet.Adresses {
@@ -758,10 +764,10 @@ func getUsersByMentionedAddresses(txVerbose *btcjson.TxRawResult) []rawWallet {
 		for _, address := range previousTxVerbose.Vout[input.Vout].ScriptPubKey.Addresses {
 			query := bson.M{"wallets.addresses.address": address}
 			err := usersData.Find(query).One(nil)
-			if err != mgo.ErrNotFound {
+			if err == mgo.ErrNotFound {
 				continue
 			}
-			if err != nil && err != mgo.ErrNotFound {
+			if err != nil && err == mgo.ErrNotFound {
 				log.Errorf("parseInput:txsData.Find: %s", err.Error())
 				continue
 			}

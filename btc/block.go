@@ -173,17 +173,19 @@ func blockTransactions(hash *chainhash.Hash) {
 			continue
 		}
 
-		// apear as output
-		err = parseOutput(blockTxVerbose, blockHeight, TxStatusAppearedInBlockIncoming)
-		if err != nil {
-			log.Errorf("parseNewBlock:parseOutput: %s", err.Error())
-		}
+		parseTransaction(blockHeight, blockTxVerbose)
 
-		// apear as input
-		err = parseInput(blockTxVerbose, blockHeight, TxStatusAppearedInBlockOutcoming)
-		if err != nil {
-			log.Errorf("parseNewBlock:parseInput: %s", err.Error())
-		}
+		// // apear as output
+		// err = parseOutput(blockTxVerbose, blockHeight, TxStatusAppearedInBlockIncoming)
+		// if err != nil {
+		// 	log.Errorf("parseNewBlock:parseOutput: %s", err.Error())
+		// }
+
+		// // apear as input
+		// err = parseInput(blockTxVerbose, blockHeight, TxStatusAppearedInBlockOutcoming)
+		// if err != nil {
+		// 	log.Errorf("parseNewBlock:parseInput: %s", err.Error())
+		// }
 	}
 }
 
@@ -457,10 +459,10 @@ func blockConfirmations(hash *chainhash.Hash) {
 func parseTransaction(blockHeight int64, txVerbose *btcjson.TxRawResult) {
 	fullWallets := []rawWallet{}
 	txTimeUnix := time.Now().Unix()
-	user := store.user{}
+	user := store.User{}
 	if isClientMentioned(txVerbose) {
 		rawWallets := getUsersByMentionedAddresses(txVerbose)
-		for rawWallet := range rawWallets {
+		for _, rawWallet := range rawWallets {
 			fullWallets = append(fullWallets, setTransactionTypeForWallet(rawWallet, blockHeight, txVerbose))
 		}
 
@@ -469,96 +471,209 @@ func parseTransaction(blockHeight int64, txVerbose *btcjson.TxRawResult) {
 			if fullWallet.TxStatus == store.TxStatusAppearedInMempoolIncoming || fullWallet.TxStatus == store.TxStatusAppearedInBlockIncoming {
 				for _, output := range txVerbose.Vout {
 					for _, address := range output.ScriptPubKey.Addresses {
-						query := bson.M{"userID": fullWallet.userid}
-						err := usersData.Find(query).One(&user)
-						if err != nil {
-							log.Errorf("parseTransaction:usersData.Find: %s", err.Error())
-						}
 
-						walletIndex := fetchWalletIndex(user.Wallets, address)
+						for _, fullWalletAddress := range fullWallet.wallet.Adresses {
+							if fullWalletAddress.Address == address {
+								//
 
-						// Update wallets last action time on every new transaction.
-						// Set status to OK if some money transfered to this address
-						sel := bson.M{"userID": user.UserID, "wallets.walletIndex": walletIndex}
-						update := bson.M{
-							"$set": bson.M{
-								"wallets.$.status":         store.WalletStatusOK,
-								"wallets.$.lastActionTime": time.Now().Unix(),
-							},
-						}
-						err = usersData.Update(sel, update)
-						if err != nil {
-							log.Errorf("parseOutput:restClient.userStore.Update: %s", err.Error())
-						}
+								query := bson.M{"wallets.addresses.address": address}
+								err := usersData.Find(query).One(&user)
+								if err != nil {
+									log.Errorf("parseTransaction:usersData.Find: %s", err.Error())
+								}
 
-						// Update address last action time on every new transaction.
-						sel = bson.M{"userID": user.UserID, "wallets.addresses.address": address}
-						update = bson.M{
-							"$set": bson.M{
-								"wallets.$.addresses.$[].lastActionTime": time.Now().Unix(),
-							},
-						}
-						err = usersData.Update(sel, update)
-						if err != nil {
-							log.Errorf("parseOutput:restClient.userStore.Update: %s", err.Error())
-						}
+								walletIndex := fullWallet.wallet.WalletIndex
 
-						inputs, outputs, fee, err := txInfo(txVerbose)
-						if err != nil {
-							log.Errorf("parseInput:txInfo:output: %s", err.Error())
-							continue
-						}
+								// Update wallets last action time on every new transaction.
+								// Set status to OK if some money transfered to this address
+								sel := bson.M{"userID": fullWallet.userid, "wallets.walletIndex": fullWallet.wallet.WalletIndex}
+								update := bson.M{
+									"$set": bson.M{
+										"wallets.$.status":         store.WalletStatusOK,
+										"wallets.$.lastActionTime": time.Now().Unix(),
+									},
+								}
+								err = usersData.Update(sel, update)
+								if err != nil {
+									log.Errorf("parseOutput:restClient.userStore.Update: %s", err.Error())
+								}
 
-						// Get latest exchange rates from db.
-						exRates, err := GetLatestExchangeRate()
-						if err != nil {
-							log.Errorf("parseOutput:GetLatestExchangeRate: %s", err.Error())
-						}
+								// Update address last action time on every new transaction.
+								sel = bson.M{"userID": user.UserID, "wallets.addresses.address": address}
+								update = bson.M{
+									"$set": bson.M{
+										"wallets.$.addresses.$[].lastActionTime": time.Now().Unix(),
+									},
+								}
+								err = usersData.Update(sel, update)
+								if err != nil {
+									log.Errorf("parseOutput:restClient.userStore.Update: %s", err.Error())
+								}
 
-						sel = bson.M{"userid": user.UserID, "transactions.txid": txVerbose.Txid, "transactions.txaddress": address}
-						err = txsData.Find(sel).One(nil)
-						if err == mgo.ErrNotFound {
-							txOutAmount := int64(100000000 * output.Value)
+								inputs, outputs, fee, err := txInfo(txVerbose)
+								if err != nil {
+									log.Errorf("parseInput:txInfo:output: %s", err.Error())
+									continue
+								}
 
-							// Set bloct time -1 if tx from mempool.
-							blockTime := blockTimeUnix
-							if blockHeight == -1 {
-								blockTime = int64(-1)
+								// Get latest exchange rates from db.
+								exRates, err := GetLatestExchangeRate()
+								if err != nil {
+									log.Errorf("parseOutput:GetLatestExchangeRate: %s", err.Error())
+								}
+
+								sel = bson.M{"userid": user.UserID, "transactions.txid": txVerbose.Txid, "transactions.walletindex": fullWallet.wallet.WalletIndex}
+								err = txsData.Find(sel).One(nil)
+								if err == mgo.ErrNotFound {
+									txOutAmount := int64(100000000 * output.Value)
+									// Set bloct time -1 if tx from mempool.
+									blockTime := txTimeUnix
+									if blockHeight == -1 {
+										blockTime = int64(-1)
+									}
+
+									newTx := newMultyTX(txVerbose.Txid, txVerbose.Hash, output.ScriptPubKey.Hex, address, fullWallet.TxStatus, int(output.N), walletIndex, txOutAmount, blockTime, blockHeight, fee, txTimeUnix, exRates, inputs, outputs)
+									sel = bson.M{"userid": user.UserID}
+									update := bson.M{"$push": bson.M{"transactions": newTx}}
+									err = txsData.Update(sel, update)
+									if err != nil {
+										log.Errorf("parseInput.Update add new tx to user: %s", err.Error())
+									}
+									continue
+								} else if err != nil && err != mgo.ErrNotFound {
+									log.Errorf("parseInput:txsData.Find: %s", err.Error())
+									continue
+								}
+
+								// User have this transaction but with another status.
+								// Update statsus, block height and block time.
+								sel = bson.M{"userid": user.UserID, "transactions.txid": txVerbose.Txid, "transactions.walletindex": fullWallet.wallet.WalletIndex}
+								update = bson.M{
+									"$set": bson.M{
+										"transactions.$.txstatus":    fullWallet.TxStatus,
+										"transactions.$.blockheight": blockHeight,
+										"transactions.$.blocktime":   txTimeUnix,
+									},
+								}
+
+								err = txsData.Update(sel, update)
+								if err != nil {
+									log.Errorf("parseInput:outputsData.Insert case nil: %s", err.Error())
+								}
+
+								//
 							}
-
-							newTx := newMultyTX(txVerbose.Txid, txVerbose.Hash, output.ScriptPubKey.Hex, address, txStatus, int(output.N), walletIndex, txOutAmount, blockTime, blockHeight, fee, blockTimeUnix, exRates, inputs, outputs)
-							sel = bson.M{"userid": user.UserID}
-							update := bson.M{"$push": bson.M{"transactions": newTx}}
-							err = txsData.Update(sel, update)
-							if err != nil {
-								log.Errorf("parseInput.Update add new tx to user: %s", err.Error())
-							}
-							continue
-						} else if err != nil && err != mgo.ErrNotFound {
-							log.Errorf("parseInput:txsData.Find: %s", err.Error())
-							continue
 						}
 
-						// User have this transaction but with another status.
-						// Update statsus, block height and block time.
-						sel = bson.M{"userid": user.UserID, "transactions.txid": txVerbose.Txid, "transactions.txaddress": address}
-						update = bson.M{
-							"$set": bson.M{
-								"transactions.$.txstatus":    txStatus,
-								"transactions.$.blockheight": blockHeight,
-								"transactions.$.blocktime":   blockTimeUnix,
-							},
-						}
-
-						err = txsData.Update(sel, update)
-						if err != nil {
-							log.Errorf("parseInput:outputsData.Insert case nil: %s", err.Error())
-						}
 					}
 				}
 			}
 			if fullWallet.TxStatus == store.TxStatusAppearedInMempoolOutcoming || fullWallet.TxStatus == store.TxStatusAppearedInBlockOutcoming {
+				for _, output := range txVerbose.Vout {
+					for _, address := range output.ScriptPubKey.Addresses {
 
+						for _, fullWalletAddress := range fullWallet.wallet.Adresses {
+							if fullWalletAddress.Address == address {
+								//
+								for _, input := range txVerbose.Vin {
+
+									previousTxVerbose, err := rawTxByTxid(input.Txid)
+									if err != nil {
+										log.Errorf("parseInput:rawTxByTxid: %s", err.Error())
+										continue
+									}
+
+									for _, address := range previousTxVerbose.Vout[input.Vout].ScriptPubKey.Addresses {
+										query := bson.M{"wallets.addresses.address": address}
+										err := usersData.Find(query).One(&user)
+										if err != nil {
+											log.Errorf("parseTransaction:usersData.Find: %s", err.Error())
+										}
+
+										inputs, outputs, fee, err := txInfo(txVerbose)
+										if err != nil {
+											log.Errorf("parseInput:txInfo:input: %s", err.Error())
+											continue
+										}
+										exRates, err := GetLatestExchangeRate()
+										if err != nil {
+											log.Errorf("parseOutput:GetLatestExchangeRate: %s", err.Error())
+										}
+
+										walletIndex := fullWallet.wallet.WalletIndex
+
+										// Update wallets last action time on every new transaction.
+										sel := bson.M{"userID": user.UserID, "wallets.walletIndex": walletIndex}
+										update := bson.M{
+											"$set": bson.M{
+												"wallets.$.lastActionTime": time.Now().Unix(),
+											},
+										}
+										err = usersData.Update(sel, update)
+										if err != nil {
+											log.Errorf("parseOutput:restClient.userStore.Update: %s", err.Error())
+										}
+
+										// Update address last action time on every new transaction.
+										sel = bson.M{"userID": user.UserID, "wallets.addresses.address": address}
+										update = bson.M{
+											"$set": bson.M{
+												"wallets.$.addresses.$[].lastActionTime": time.Now().Unix(),
+											},
+										}
+										err = usersData.Update(sel, update)
+										if err != nil {
+											log.Errorf("parseOutput:restClient.userStore.Update: %s", err.Error())
+										}
+
+										// Is our user already have this transactions.
+										sel = bson.M{"userid": user.UserID, "transactions.txid": txVerbose.Txid, "transactions.walletindex": fullWallet.wallet.WalletIndex} ///////
+										err = txsData.Find(sel).One(nil)
+										if err == mgo.ErrNotFound {
+											// User have no transaction like this. Add to DB.
+											txOutAmount := int64(100000000 * previousTxVerbose.Vout[input.Vout].Value)
+
+											// Set bloct time -1 if tx from mempool.
+											blockTime := txTimeUnix
+											if blockHeight == -1 {
+												blockTime = int64(-1)
+											}
+
+											newTx := newMultyTX(txVerbose.Txid, txVerbose.Hash, output.ScriptPubKey.Hex, address, fullWallet.TxStatus, int(output.N), walletIndex, txOutAmount, blockTime, blockHeight, fee, txTimeUnix, exRates, inputs, outputs)
+											sel = bson.M{"userid": user.UserID}
+											update := bson.M{"$push": bson.M{"transactions": newTx}}
+											err = txsData.Update(sel, update)
+											if err != nil {
+												log.Errorf("parseInput:txsData.Update add new tx to user: %s", err.Error())
+											}
+											continue
+										} else if err != nil && err != mgo.ErrNotFound {
+											log.Errorf("parseInput:txsData.Find: %s", err.Error())
+											continue
+										}
+
+										// User have this transaction but with another status.
+										// Update statsus, block height and block time.
+										sel = bson.M{"userid": user.UserID, "transactions.txid": txVerbose.Txid, "transactions.walletindex": fullWallet.wallet.WalletIndex}
+										update = bson.M{
+											"$set": bson.M{
+												"transactions.$.txstatus":    fullWallet.TxStatus,
+												"transactions.$.blockheight": blockHeight,
+												"transactions.$.blocktime":   txTimeUnix,
+											},
+										}
+										err = txsData.Update(sel, update)
+										if err != nil {
+											log.Errorf("parseInput:txsData.Update: %s", err.Error())
+										}
+									}
+								}
+								//
+							}
+						}
+
+					}
+				}
 			}
 		}
 	}
@@ -673,7 +788,7 @@ type rawWallet struct {
 }
 
 func setTransactionTypeForWallet(rWallet rawWallet, blockHeight int64, txVerbose *btcjson.TxRawResult) rawWallet {
-	//inputs
+
 	for _, input := range txVerbose.Vin {
 		previousTxVerbose, err := rawTxByTxid(input.Txid)
 		if err != nil {
@@ -699,13 +814,15 @@ func setTransactionTypeForWallet(rWallet rawWallet, blockHeight int64, txVerbose
 			for _, walletAddress := range rWallet.wallet.Adresses {
 				if address == walletAddress.Address {
 					if blockHeight == -1 {
-						rWallet.TxStatus = store.TxStatusAppearedInBlockIncoming
+						rWallet.TxStatus = store.TxStatusAppearedInMempoolIncoming
 					}
 					if blockHeight != -1 {
-						rWallet.TxStatus = store.TxStatusAppearedInMempoolIncoming
+						rWallet.TxStatus = store.TxStatusAppearedInBlockIncoming
 					}
 				}
 			}
 		}
 	}
+
+	return rWallet
 }

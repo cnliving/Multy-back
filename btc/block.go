@@ -453,3 +453,115 @@ func blockConfirmations(hash *chainhash.Hash) {
 	}
 
 }
+
+func parseTransaction(txType, blockNumber int64, txVerbose *btcjson.TxRawResult) {
+	if isClientMentioned(txVerbose) {
+
+	}
+}
+
+func isClientMentioned(txVerbose *btcjson.TxRawResult) bool {
+	var flag bool
+
+	for _, output := range txVerbose.Vout {
+		for _, address := range output.ScriptPubKey.Addresses {
+			query := bson.M{"wallets.addresses.address": address}
+			err := usersData.Find(query).One(nil)
+			if err != mgo.ErrNotFound {
+				continue
+			}
+			if err != nil && err != mgo.ErrNotFound {
+				log.Errorf("parseInput:txsData.Find: %s", err.Error())
+				continue
+			}
+			flag = true
+			return flag
+		}
+	}
+
+	for _, input := range txVerbose.Vin {
+		previousTxVerbose, err := rawTxByTxid(input.Txid)
+		if err != nil {
+			log.Errorf("parseInput:rawTxByTxid: %s", err.Error())
+			continue
+		}
+		for _, address := range previousTxVerbose.Vout[input.Vout].ScriptPubKey.Addresses {
+			query := bson.M{"wallets.addresses.address": address}
+			err := usersData.Find(query).One(nil)
+			if err != mgo.ErrNotFound {
+				continue
+			}
+			if err != nil && err != mgo.ErrNotFound {
+				log.Errorf("parseInput:txsData.Find: %s", err.Error())
+				continue
+			}
+			flag = true
+			return flag
+		}
+	}
+	return false
+}
+
+func getUsersByMentionedAddresses(txVerbose *btcjson.TxRawResult) []rawWallet {
+	rawWallets := []rawWallet{}
+	user := store.User{}
+	for _, output := range txVerbose.Vout {
+		for _, address := range output.ScriptPubKey.Addresses {
+			query := bson.M{"wallets.addresses.address": address}
+			err := usersData.Find(query).One(&user)
+			if err != mgo.ErrNotFound {
+				continue
+			}
+			if err != nil && err != mgo.ErrNotFound {
+				log.Errorf("parseInput:txsData.Find: %s", err.Error())
+				continue
+			}
+
+			for _, userWallet := range user.Wallets {
+				for _, walletAddress := range userWallet.Adresses {
+					if walletAddress.Address == address {
+						rawWallets = append(rawWallets, rawWallet{
+							userid: user.UserID,
+							wallet: userWallet,
+						})
+					}
+				}
+			}
+		}
+	}
+	for _, input := range txVerbose.Vin {
+		previousTxVerbose, err := rawTxByTxid(input.Txid)
+		if err != nil {
+			log.Errorf("parseInput:rawTxByTxid: %s", err.Error())
+			continue
+		}
+		for _, address := range previousTxVerbose.Vout[input.Vout].ScriptPubKey.Addresses {
+			query := bson.M{"wallets.addresses.address": address}
+			err := usersData.Find(query).One(nil)
+			if err != mgo.ErrNotFound {
+				continue
+			}
+			if err != nil && err != mgo.ErrNotFound {
+				log.Errorf("parseInput:txsData.Find: %s", err.Error())
+				continue
+			}
+			for _, userWallet := range user.Wallets {
+				for _, walletAddress := range userWallet.Adresses {
+					if walletAddress.Address == address {
+						rawWallets = append(rawWallets, rawWallet{
+							userid: user.UserID,
+							wallet: userWallet,
+						})
+					}
+				}
+			}
+		}
+	}
+
+	return rawWallets
+}
+
+type rawWallet struct {
+	userid string
+	wallet store.Wallet
+}

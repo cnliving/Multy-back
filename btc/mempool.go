@@ -76,16 +76,16 @@ func parseMempoolTransaction(inTx *btcjson.TxRawResult) {
 func mempoolTransaction(inTx *btcjson.TxRawResult) {
 	log.Debugf("[MEMPOOL TX]")
 
-	// apear as output
-	err := parseOutput(inTx, -1, TxStatusAppearedInMempoolIncoming)
-	if err != nil {
-		log.Errorf("mempoolTransaction:parseOutput: %s", err.Error())
-	}
+	// // apear as output
+	// err := parseOutput(inTx, -1, TxStatusAppearedInMempoolIncoming)
+	// if err != nil {
+	// 	log.Errorf("mempoolTransaction:parseOutput: %s", err.Error())
+	// }
 
-	// apear as input
-	err = parseInput(inTx, -1, TxStatusAppearedInMempoolOutcoming)
-	if err != nil {
-		log.Errorf("mempoolTransaction:parseInput: %s", err.Error())
-	}
+	// // apear as input
+	// err = parseInput(inTx, -1, TxStatusAppearedInMempoolOutcoming)
+	// if err != nil {
+	// 	log.Errorf("mempoolTransaction:parseInput: %s", err.Error())
+	// }
 
 }

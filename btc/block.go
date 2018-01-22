@@ -489,6 +489,20 @@ func parseTransaction(rawTransaction *btcjson.TxRawResult, blockHeight int64) {
 					for _, input := range allInputs {
 						if input == address.Address {
 
+							for _, userTX := range user.BtcTransactions {
+								if userTX.TxID == btcTx.TxID {
+									// update
+								}
+								//create new
+
+							}
+
+						}
+					}
+
+					for _, output := range allOutputs {
+						if output == address.Address {
+
 						}
 					}
 
@@ -569,11 +583,11 @@ type BTCMultyTx struct {
 type BTCMultyUserTx struct {
 	BtcTx       BTCMultyTx `json:"btctx"`
 	TxAddress   string     `json:"address"`
-	TxStatus    int        `json:"txstatus"`
-	TxOutAmount int64      `json:"txoutamount"`
-	WalletIndex int        `json:"walletindex"`
 	TxOutScript string     `json:"txoutscript"`
+	TxStatus    int        `json:"txstatus"`
+	WalletIndex int        `json:"walletindex"`
 	TxOutID     int        `json:"txoutid"`
+	TxOutAmount int64      `json:"txoutamount"`
 }
 
 func newBTCMultyTx(txid, txhash string, blocktime, blockheight, txfee, mempooltime int64, stockexchangerate []store.ExchangeRatesRecord, inputs, outputs []store.AddresAmount) BTCMultyTx {
@@ -587,5 +601,11 @@ func newBTCMultyTx(txid, txhash string, blocktime, blockheight, txfee, mempoolti
 		StockExchangeRate: stockexchangerate,
 		TxInputs:          inputs,
 		TxOutputs:         outputs,
+	}
+}
+
+func newBTCMultyUserTx(btctx BTCMultyTx) BTCMultyUserTx {
+	return BTCMultyUserTx{
+		BtcTx: btctx,
 	}
 }

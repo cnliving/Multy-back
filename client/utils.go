@@ -22,9 +22,10 @@ func decodeBody(c *gin.Context, to interface{}) error {
 
 func createUser(userid string, device []store.Device, wallets []store.Wallet) store.User {
 	return store.User{
-		UserID:  userid,
-		Devices: device,
-		Wallets: wallets,
+		UserID:          userid,
+		Devices:         device,
+		Wallets:         wallets,
+		BtcTransactions: []store.MultyTX{},
 	}
 }
 func createDevice(deviceid, ip, jwt, pushToken string, deviceType int) store.Device {

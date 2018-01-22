@@ -26,9 +26,10 @@ const (
 
 // User represents a single app user
 type User struct {
-	UserID  string   `bson:"userID"`  // User uqnique identifier
-	Devices []Device `bson:"devices"` // All user devices
-	Wallets []Wallet `bson:"wallets"` // All user addresses in all chains
+	UserID          string    `bson:"userID"`  // User uqnique identifier
+	Devices         []Device  `bson:"devices"` // All user devices
+	Wallets         []Wallet  `bson:"wallets"` // All user addresses in all chains
+	BtcTransactions []MultyTX `"btctxs"`
 }
 
 type BTCTransaction struct {

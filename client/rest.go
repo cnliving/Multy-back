@@ -70,7 +70,7 @@ type RestClient struct {
 
 	log slf.StructuredLogger
 
-	donationAddresses map[string]string
+	donationAddresses []store.DonationInfo
 }
 
 type BTCApiConf struct {
@@ -85,7 +85,7 @@ func SetRestHandlers(
 	r *gin.Engine,
 	clientRPC *rpcclient.Client,
 	btcNodeAddress string,
-	donationAddresses map[string]string,
+	donationAddresses []store.DonationInfo,
 ) (*RestClient, error) {
 	restClient := &RestClient{
 		userStore: userDB,

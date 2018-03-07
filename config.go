@@ -24,5 +24,5 @@ type Configuration struct {
 	BTCSertificate    string
 	NSQAddress        string
 	BTCNodeAddress    string
-	DonationAddresses map[string]string
+	DonationAddresses []store.DonationInfo
 }

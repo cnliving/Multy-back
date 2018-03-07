@@ -212,3 +212,10 @@ type MultyETHTransaction struct {
 	BlockTime  int64   `json:"blocktime"`
 	TxPoolTime int64   `json:"tpooltime"`
 }
+
+type DonationInfo struct {
+	OS              int
+	Feature         string
+	FeatureCode     int
+	DonationAddress string
+}

@@ -13,7 +13,7 @@ import (
 	"github.com/Appscrunch/Multy-back/client"
 	"github.com/Appscrunch/Multy-back/eth"
 	"github.com/Appscrunch/Multy-back/store"
-	"github.com/Appscrunch/deps/slf"
+	"github.com/KristinaEtc/slf"
 )
 
 var (

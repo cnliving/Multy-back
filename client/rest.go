@@ -113,6 +113,8 @@ func SetRestHandlers(
 
 	r.GET("/statuscheck", restClient.statusCheck())
 
+	r.GET("/donations", restClient.getDonationsBalances())
+
 	v1 := r.Group("/api/v1")
 	v1.Use(restClient.middlewareJWT.MiddlewareFunc())
 	{
@@ -129,7 +131,7 @@ func SetRestHandlers(
 		v1.POST("/wallet/name", restClient.changeWalletName())                                              //todo add currency id √
 		v1.GET("/exchange/changelly/list", restClient.changellyListCurrencies())
 		//v1.GET("/drop", restClient.drop())
-		v1.GET("/donations", restClient.getDonationsBalances())
+
 	}
 	return restClient, nil
 }

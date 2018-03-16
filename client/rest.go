@@ -30,6 +30,7 @@ import (
 	"github.com/gin-gonic/gin"
 	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
+	"math/rand"
 )
 
 const (
@@ -127,7 +128,8 @@ func SetRestHandlers(
 		v1.GET("/wallets/transactions/:currencyid/:walletindex", restClient.getWalletTransactionsHistory()) //todo add currency id	√
 		v1.POST("/wallet/name", restClient.changeWalletName())                                              //todo add currency id √
 		v1.GET("/exchange/changelly/list", restClient.changellyListCurrencies())
-		v1.GET("/drop", restClient.drop())
+		//v1.GET("/drop", restClient.drop())
+		v1.GET("/donations", restClient.getDonationsBalances())
 	}
 	return restClient, nil
 }
@@ -202,6 +204,12 @@ type AddressEx struct { // extended
 	AddressID int    `bson:"addressID"` //addressIndex
 	Address   string `bson:"address"`
 	Amount    int    `bson:"amount"` //float64
+}
+
+type Donation struct {
+	FeatureID	int		`json:"id"`
+	Address		string	`json:"address"`
+	Amount		int64	`json:"amount"`
 }
 
 func getToken(c *gin.Context) (string, error) {
@@ -320,6 +328,16 @@ func addAddressToWallet(address, token string, currencyID, walletIndex, addressI
 	return nil
 
 }
+
+func (restClient *RestClient) getDonationsBalances() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		resp := getFakeDonationBalances()
+
+		c.JSON(http.StatusOK, resp)
+	}
+}
+
+
 
 func (restClient *RestClient) drop() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -1405,4 +1423,76 @@ type ChangellyReqest struct {
 	ID      int      `json:"id"`
 	Method  string   `json:"method"`
 	Params  []string `json:"params"`
+}
+
+
+
+func getFakeDonationBalances() []Donation{
+	donations := []Donation{}
+
+	//Android
+	donations = append(donations, Donation{10000, "1FPv9f8EGRDNod7mSvJnUFonUioA3Pw5ng", rand.Int63n(100000000)})
+	donations = append(donations, Donation{10100, "1EyoGcD8sWzHikPPiJmzGiHyUyTHZzHtGU", rand.Int63n(100000000)})
+	donations = append(donations, Donation{10101, "1Eo3U9PVSr3XyFhaH5sm1hWNpMmk1bCKQR", rand.Int63n(100000000)})
+	donations = append(donations, Donation{10102, "1LtLD3W2uqABssS1SZxeYi75xvpZpYFZ1B", rand.Int63n(100000000)})
+	donations = append(donations, Donation{10103, "14REwuBJQTTEF8PNCF2vmKtanoK7u1NbHr", rand.Int63n(100000000)})
+	donations = append(donations, Donation{10104, "1DVmNPZgSUmdsBd5cmYUMgvmFH7rmDzyRY", rand.Int63n(100000000)})
+	donations = append(donations, Donation{10105, "17wvEWAqnY5qmitVzTR9DiV8jPz3GK8GD1", rand.Int63n(100000000)})
+	donations = append(donations, Donation{10106, "12bfndjvvj6FeXPN29Q16zvFxYZRR9zxQ4", rand.Int63n(100000000)})
+	donations = append(donations, Donation{10107, "1Fp9JeCdcrz9ankvbktXiiQNtb55ZcBN3t", rand.Int63n(100000000)})
+	donations = append(donations, Donation{10108, "1MtBFKke5JUJHYhxEt1NLzNtyiJTPvM5oX", rand.Int63n(100000000)})
+	donations = append(donations, Donation{10109, "18LUgSbx5ugbAUCJoHwoymtMgvwjh6qr9Y", rand.Int63n(100000000)})
+	donations = append(donations, Donation{10110, "1Ctw3VrQUvSiSRQrrRMpaAEuoBiwZP6HnU", rand.Int63n(100000000)})
+	donations = append(donations, Donation{10111, "14BaepJbbLb6Dwe2Xk8A2QTmon3txgcbZf", rand.Int63n(100000000)})
+	donations = append(donations, Donation{10200, "1NsjWawSRS7vgTjkYgRDMfsmSkjbmbDsrg", rand.Int63n(100000000)})
+	donations = append(donations, Donation{10201, "1ChaYAgqzBMiwFKHk52CJf7TKxHGKcScDy", rand.Int63n(100000000)})
+	donations = append(donations, Donation{10202, "1KqPGUb8eT2uP1UAwRvNuk2b4UgxXa3Sc9", rand.Int63n(100000000)})
+	donations = append(donations, Donation{10203, "1Gjk2tkBi42o9TAen9VEWWNoDkYf5L9qgC", rand.Int63n(100000000)})
+	donations = append(donations, Donation{10300, "1PXWUeabhszE71ND4fTFA6s4CqihKf4QVd", rand.Int63n(100000000)})
+	donations = append(donations, Donation{10301, "17Tnp8H6m3mqWExQD3gAX9HSYwvuMSLoWG", rand.Int63n(100000000)})
+	donations = append(donations, Donation{10302, "1PzdBkuL9RjnLhSgAh4So5ZkpSjti6jjs9", rand.Int63n(100000000)})
+	donations = append(donations, Donation{10400, "16Ys7ARTJNaw1DqikX5ufjJbo7kdG3jUXj", rand.Int63n(100000000)})
+	donations = append(donations, Donation{10401, "16qEnyvofjqnRupPd8kARzsNbavauVHoSj", rand.Int63n(100000000)})
+	donations = append(donations, Donation{10402, "198RLNrbvomzEe54T5zvfqibpM8BWMJqvh", rand.Int63n(100000000)})
+	donations = append(donations, Donation{10403, "1D3nrQ1PoBjpCAvGqzBEQguYDTeuYi53yu", rand.Int63n(100000000)})
+	donations = append(donations, Donation{10404, "19ui7qnsfk8x64b6sArBUs7Zag4fwdBZjR", rand.Int63n(100000000)})
+	donations = append(donations, Donation{10405, "1MgNGDvasvnoyHLMLE5fivNKEzkNB7mxBp", rand.Int63n(100000000)})
+	donations = append(donations, Donation{10406, "15oBGfmAUeUAhYrKpZuax5wXaFM5f5ziET", rand.Int63n(100000000)})
+	donations = append(donations, Donation{10407, "1AqYfNpPP3QysShKkYWEFMJQ8oMhi5p7J2", rand.Int63n(100000000)})
+	donations = append(donations, Donation{10408, "1Eqse35Q9E3a8e8meibBFUTp426ymTuusR", rand.Int63n(100000000)})
+	donations = append(donations, Donation{10409, "164DrBqBmw4Xsj2Cbs2AQWiGGBoKDCvQF4", rand.Int63n(100000000)})
+
+	//IOS
+	donations = append(donations, Donation{20000, "1GQsE1gBf3bjVACVve5R3aFgxiTAVgZReU", rand.Int63n(100000000)})
+	donations = append(donations, Donation{20100, "1PwXHW2tKKBu6VfdmTmaFVbfpkHphVHVNu", rand.Int63n(100000000)})
+	donations = append(donations, Donation{20101, "12iWkYPbwVXovtMUxhbXU6NBm4FcLV2Pbc", rand.Int63n(100000000)})
+	donations = append(donations, Donation{20102, "1A5USPtadqSzZ7gydT8MzP6SxvdjBkRPzk", rand.Int63n(100000000)})
+	donations = append(donations, Donation{20103, "125RMxikYSVZLM9b3fjN1PYQtav62yFd4H", rand.Int63n(100000000)})
+	donations = append(donations, Donation{20104, "1PYCkHG3f5s8iMuHVDerRZZhuZUPuYf1jC", rand.Int63n(100000000)})
+	donations = append(donations, Donation{20105, "1MwoexrY3TBej3JsGhudCEQ97mn8WKen7o", rand.Int63n(100000000)})
+	donations = append(donations, Donation{20106, "1B2jT1bwzUP7pHfXNVFVGGZxsTidbo6kdT", rand.Int63n(100000000)})
+	donations = append(donations, Donation{20107, "15PEDxaAUzoMKpbSeHHF5HWHcyN4wsptKs", rand.Int63n(100000000)})
+	donations = append(donations, Donation{20108, "1BgRcp6tb6YUCsSNVDFvzZNU7pZmiuiqL9", rand.Int63n(100000000)})
+	donations = append(donations, Donation{20109, "1FZ9eeWwcHcioJnixdr6Q7SroUcaCQVAN8", rand.Int63n(100000000)})
+	donations = append(donations, Donation{20110, "1RSrQTwobtrYweK5r6Pkvy4BFgL1Mz7c8", rand.Int63n(100000000)})
+	donations = append(donations, Donation{20111, "1FnYG1V8Nh2E3vjdSnXgbadzMDa1JKLHx5", rand.Int63n(100000000)})
+	donations = append(donations, Donation{20200, "1AuZJdi1BU5BUFzEAd5SLbEYCaRvrsUZc6", rand.Int63n(100000000)})
+	donations = append(donations, Donation{20201, "13ixZSo48m3vvGvw594ePRpRsBetDuWvAi", rand.Int63n(100000000)})
+	donations = append(donations, Donation{20202, "13pBbAVozYJmdzTbKx66YMyx9Q8pLaxDFS", rand.Int63n(100000000)})
+	donations = append(donations, Donation{20203, "1EmG7HV1d9fqnXC9d2omN1zXrcSnNDjS4z", rand.Int63n(100000000)})
+	donations = append(donations, Donation{20300, "18n2RGk6JMH4hrGBaJmwoVVKqr2ZfdMJcK", rand.Int63n(100000000)})
+	donations = append(donations, Donation{20301, "19i9o6HJkr7bRepnJc7eNPEPAv7KR9xaSb", rand.Int63n(100000000)})
+	donations = append(donations, Donation{20302, "15t1LfPrZnv6cVtgPEJS8vr1sG1Sum5UQt", rand.Int63n(100000000)})
+	donations = append(donations, Donation{20400, "1FjtcprdPSo2BVyUtPKqYmVKFH7aPNmMEE", rand.Int63n(100000000)})
+	donations = append(donations, Donation{20401, "17Xkm8wxGoz8pWqWHC88qLXdFfB2qBuYJR", rand.Int63n(100000000)})
+	donations = append(donations, Donation{20402, "1338kXwBoUMEQk6PZa9ThCbxjDE3DFKr5V", rand.Int63n(100000000)})
+	donations = append(donations, Donation{20403, "12Nz3sAUzX6RUddcCujyoY9HtNz7GijMR9", rand.Int63n(100000000)})
+	donations = append(donations, Donation{20404, "14WP9s82WBRZSf9bXy9Q9wenhcfFfPDjWr", rand.Int63n(100000000)})
+	donations = append(donations, Donation{20405, "1BqmhJacEYvtpWBpq5HYeDTTETbKDL9ocx", rand.Int63n(100000000)})
+	donations = append(donations, Donation{20406, "1B5FFAqtKPy9TyyFZwGQWAt6wmvGQ3qMNA", rand.Int63n(100000000)})
+	donations = append(donations, Donation{20407, "1wxFYCSsxWHt82hByKfDsu7QH3KHwxqJX", rand.Int63n(100000000)})
+	donations = append(donations, Donation{20408, "1KL6BneRs16Rt2V3iYwip2MgvS8UfCV8z5", rand.Int63n(100000000)})
+	donations = append(donations, Donation{20409, "1KbRaapwNnTJMZcpbTQfb7xJnymKFJDyC1", rand.Int63n(100000000)})
+
+	return donations
 }
